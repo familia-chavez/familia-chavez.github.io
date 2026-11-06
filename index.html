@@ -1,0 +1,532 @@
+<!DOCTYPE html>
+<html lang="es-AR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Familia Chávez</title>
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="Familia Chávez">
+<meta name="theme-color" content="#F6F1E7">
+<link rel="manifest" href="manifest.json">
+<link rel="apple-touch-icon" href="icon-180.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800;900&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+<style>
+:root{
+  --fondo:#F6F1E7; --papel:#FFFDF8; --linea:#E6DFD0;
+  --salvia:#6E8B6A; --salvia-osc:#4F6A4C; --salvia-clara:#E3EBDD;
+  --tinta:#2F3A2E; --tinta-suave:#6B7468;
+  --ingreso:#4F7A4B; --gasto:#B5574B; --aviso:#C98E2B;
+  color-scheme:light;
+}
+@media (prefers-color-scheme:dark){
+  :root{
+    --fondo:#1C211B; --papel:#252B24; --linea:#353D33;
+    --salvia:#8FAE8A; --salvia-osc:#A9C6A3; --salvia-clara:#2E3A2C;
+    --tinta:#EEF1EA; --tinta-suave:#A3AD9F;
+    --ingreso:#8FC58A; --gasto:#E38B7E; --aviso:#E2B45C;
+    color-scheme:dark;
+  }
+}
+*{box-sizing:border-box}
+html{height:100%;scroll-padding-top:env(safe-area-inset-top,0px)}
+body{margin:0;min-height:100%;background:var(--fondo);color:var(--tinta);
+  font-family:"Nunito",system-ui,-apple-system,sans-serif;font-size:16px;line-height:1.45;
+  -webkit-tap-highlight-color:transparent}
+.app{max-width:480px;margin:0 auto;padding:calc(env(safe-area-inset-top,0px) + 14px) 18px calc(env(safe-area-inset-bottom,0px) + 96px)}
+header.top{display:flex;align-items:center;justify-content:space-between;margin-bottom:18px}
+.marca{display:flex;align-items:center;gap:10px;font-weight:800;font-size:1.1rem}
+.marca svg{width:30px;height:30px}
+.sync{font-size:.8rem;color:var(--tinta-suave);display:flex;align-items:center;gap:6px}
+.punto{width:8px;height:8px;border-radius:50%;background:var(--tinta-suave)}
+.punto.ok{background:var(--ingreso)} .punto.err{background:var(--gasto)}
+h2{font-size:1.05rem;font-weight:800;margin:26px 0 10px}
+.muted{color:var(--tinta-suave);font-size:.9rem}
+button{font:inherit;cursor:pointer;border:0;background:none;color:inherit}
+button:focus-visible,input:focus-visible,select:focus-visible{outline:3px solid var(--salvia);outline-offset:2px}
+
+/* Saldo: el elemento protagonista, una casita que se llena */
+.saldo{background:var(--papel);border-radius:28px 28px 22px 22px;padding:22px 20px 18px;border:1px solid var(--linea)}
+.mes{display:flex;align-items:center;justify-content:space-between;margin-bottom:6px}
+.mes button{width:36px;height:36px;border-radius:50%;background:var(--salvia-clara);font-size:1.1rem;font-weight:800}
+.mes strong{font-weight:800;text-transform:capitalize}
+.casa{display:flex;gap:16px;align-items:center;margin-top:10px}
+.casa svg{flex:0 0 92px;height:92px}
+.saldo-num{font-size:2.3rem;font-weight:900;letter-spacing:-.02em;line-height:1.05}
+.saldo-num.neg{color:var(--gasto)}
+.dos{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:16px}
+.dos div{background:var(--fondo);border-radius:16px;padding:10px 12px}
+.dos b{display:block;font-size:1.1rem;font-weight:800}
+.in{color:var(--ingreso)} .out{color:var(--gasto)}
+
+.lista{background:var(--papel);border:1px solid var(--linea);border-radius:20px;overflow:hidden}
+.fila{display:flex;align-items:center;gap:12px;padding:12px 14px;border-bottom:1px solid var(--linea);width:100%;text-align:left}
+.fila:last-child{border-bottom:0}
+.ico{flex:0 0 38px;height:38px;border-radius:12px;display:grid;place-items:center;font-size:1.15rem;background:var(--salvia-clara)}
+.fila .txt{flex:1;min-width:0}
+.fila .txt span{display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.fila .txt small{color:var(--tinta-suave);font-size:.8rem}
+.fila .monto{font-weight:800;white-space:nowrap}
+.vacio{padding:22px;text-align:center;color:var(--tinta-suave)}
+.barra{height:8px;border-radius:8px;background:var(--fondo);overflow:hidden;margin-top:6px}
+.barra i{display:block;height:100%;background:var(--salvia);border-radius:8px}
+.etq{font-size:.72rem;font-weight:800;padding:2px 8px;border-radius:20px;background:var(--salvia-clara);color:var(--salvia-osc)}
+.etq.aviso{background:color-mix(in srgb,var(--aviso) 20%,transparent);color:var(--aviso)}
+.etq.rojo{background:color-mix(in srgb,var(--gasto) 18%,transparent);color:var(--gasto)}
+.aumento{background:color-mix(in srgb,var(--aviso) 14%,var(--papel));border:1px solid color-mix(in srgb,var(--aviso) 40%,transparent);border-radius:18px;padding:12px 14px;margin-top:10px}
+.chips{display:flex;gap:8px;overflow-x:auto;padding-bottom:4px;margin-bottom:10px}
+.chip{padding:7px 14px;border-radius:20px;background:var(--papel);border:1px solid var(--linea);font-weight:700;font-size:.88rem;white-space:nowrap}
+.chip.on{background:var(--salvia);border-color:var(--salvia);color:#fff}
+
+/* Barra inferior */
+nav.tabs{position:fixed;left:0;right:0;bottom:0;background:var(--papel);border-top:1px solid var(--linea);
+  padding:8px 10px calc(env(safe-area-inset-bottom,0px) + 8px);z-index:20}
+nav.tabs .in-nav{max-width:480px;margin:0 auto;display:grid;grid-template-columns:repeat(5,1fr);align-items:end}
+nav.tabs button{display:flex;flex-direction:column;align-items:center;gap:2px;font-size:.7rem;font-weight:700;color:var(--tinta-suave);padding:4px 0}
+nav.tabs button.on{color:var(--salvia-osc)}
+nav.tabs svg{width:24px;height:24px}
+nav.tabs .mas{width:56px;height:56px;border-radius:20px;background:var(--salvia);color:#fff;display:grid;place-items:center;margin:-22px auto 0;box-shadow:0 6px 16px color-mix(in srgb,var(--salvia) 45%,transparent);font-size:2rem;font-weight:400}
+
+/* Hoja de carga */
+.velo{position:fixed;inset:0;background:rgba(20,25,20,.45);z-index:30;display:none;align-items:flex-end;justify-content:center}
+.velo.abierto{display:flex}
+.hoja{background:var(--papel);width:100%;max-width:480px;border-radius:26px 26px 0 0;padding:18px 18px calc(env(safe-area-inset-bottom,0px) + 18px);max-height:92vh;overflow-y:auto;animation:sube .25s ease-out}
+@keyframes sube{from{transform:translateY(40px);opacity:.4}to{transform:none;opacity:1}}
+@media (prefers-reduced-motion:reduce){.hoja{animation:none}}
+.hoja h3{margin:4px 0 14px;font-size:1.15rem;font-weight:800}
+.tipo{display:grid;grid-template-columns:1fr 1fr;gap:6px;background:var(--fondo);padding:5px;border-radius:16px;margin-bottom:14px}
+.tipo button{padding:10px;border-radius:12px;font-weight:800}
+.tipo button.on.g{background:var(--gasto);color:#fff}
+.tipo button.on.i{background:var(--ingreso);color:#fff}
+label{display:block;font-size:.82rem;font-weight:700;color:var(--tinta-suave);margin:10px 0 4px}
+input,select{width:100%;font:inherit;font-size:16px;padding:12px 14px;border-radius:14px;border:1px solid var(--linea);background:var(--fondo);color:var(--tinta)}
+.monto-in{font-size:1.8rem;font-weight:900;text-align:center}
+.fila2{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.btn{display:block;width:100%;padding:14px;border-radius:16px;background:var(--salvia);color:#fff;font-weight:800;font-size:1rem;margin-top:16px}
+.btn.sec{background:var(--salvia-clara);color:var(--salvia-osc)}
+.btn.peligro{background:transparent;color:var(--gasto);border:1px solid var(--gasto)}
+.check{display:flex;align-items:center;gap:10px;margin-top:12px;font-weight:700}
+.check input{width:22px;height:22px}
+.toast{position:fixed;left:50%;bottom:calc(env(safe-area-inset-bottom,0px) + 90px);transform:translateX(-50%);background:var(--tinta);color:var(--fondo);padding:10px 18px;border-radius:20px;font-weight:700;z-index:50;opacity:0;transition:opacity .2s;pointer-events:none}
+.toast.ver{opacity:1}
+.subir{border:2px dashed var(--linea);border-radius:20px;padding:22px;text-align:center;background:var(--papel)}
+.vista{display:none}.vista.on{display:block}
+</style>
+</head>
+<body>
+<div class="app">
+  <header class="top">
+    <div class="marca">
+      <svg viewBox="0 0 32 32" aria-hidden="true"><path d="M4 15 16 5l12 10v12a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2Z" fill="var(--salvia)"/><path d="M12 29v-8h8v8" fill="var(--papel)"/><path d="M16 14.5c-1.6-2.4-5-1.2-4 1.4.6 1.6 4 3.6 4 3.6s3.4-2 4-3.6c1-2.6-2.4-3.8-4-1.4Z" fill="var(--papel)"/></svg>
+      Familia Chávez
+    </div>
+    <div class="sync" id="sync"><span class="punto"></span><span>Sin conexión</span></div>
+  </header>
+
+  <!-- BALANCE -->
+  <section class="vista on" id="v-balance">
+    <div class="saldo">
+      <div class="mes"><button id="mesAnt" aria-label="Mes anterior">‹</button><strong id="mesNombre"></strong><button id="mesSig" aria-label="Mes siguiente">›</button></div>
+      <div class="casa">
+        <svg viewBox="0 0 92 92" aria-hidden="true">
+          <defs><clipPath id="cc"><path d="M10 42 46 12l36 30v38a4 4 0 0 1-4 4H14a4 4 0 0 1-4-4Z"/></clipPath></defs>
+          <path d="M10 42 46 12l36 30v38a4 4 0 0 1-4 4H14a4 4 0 0 1-4-4Z" fill="var(--salvia-clara)"/>
+          <rect id="agua" x="0" y="84" width="92" height="0" fill="var(--salvia)" clip-path="url(#cc)" style="transition:all .6s ease"/>
+          <path d="M10 42 46 12l36 30v38a4 4 0 0 1-4 4H14a4 4 0 0 1-4-4Z" fill="none" stroke="var(--salvia-osc)" stroke-width="3" stroke-linejoin="round"/>
+        </svg>
+        <div>
+          <div class="muted">Te queda este mes</div>
+          <div class="saldo-num" id="saldo">$0</div>
+          <div class="muted" id="saldoPct"></div>
+        </div>
+      </div>
+      <div class="dos">
+        <div><span class="muted">Entró</span><b class="in" id="totIn">$0</b></div>
+        <div><span class="muted">Salió</span><b class="out" id="totOut">$0</b></div>
+      </div>
+    </div>
+    <div id="aumentos"></div>
+    <h2>Próximos vencimientos</h2>
+    <div class="lista" id="proxVenc"></div>
+    <h2>En qué se fue la plata</h2>
+    <div class="lista" id="porCategoria"></div>
+    <h2>Quién movió qué</h2>
+    <div class="lista" id="porPersona"></div>
+  </section>
+
+  <!-- MOVIMIENTOS -->
+  <section class="vista" id="v-movs">
+    <h2 style="margin-top:0">Movimientos</h2>
+    <div class="chips" id="filtros"></div>
+    <div class="lista" id="listaMovs"></div>
+  </section>
+
+  <!-- VENCIMIENTOS -->
+  <section class="vista" id="v-venc">
+    <h2 style="margin-top:0">Vencimientos</h2>
+    <p class="muted">Facturas y pagos por venir. Aparecen también en el calendario compartido “Familia Chávez”.</p>
+    <div class="lista" id="listaVenc"></div>
+    <button class="btn sec" id="nuevoVenc">Agregar vencimiento</button>
+  </section>
+
+  <!-- FAMILIA / AJUSTES -->
+  <section class="vista" id="v-familia">
+    <h2 style="margin-top:0">¿Quién está usando este teléfono?</h2>
+    <div class="chips" id="quienSoy"></div>
+    <h2>Integrantes</h2>
+    <div class="lista" id="listaMiembros"></div>
+    <div class="fila2" style="margin-top:10px"><input id="nuevoMiembro" placeholder="Nombre"><button class="btn sec" style="margin:0" id="agregarMiembro">Agregar</button></div>
+    <h2>Cotizaciones</h2>
+    <p class="muted" id="cotizInfo"></p>
+    <div class="fila2">
+      <div><label for="usd">Dólar ($)</label><input id="usd" inputmode="decimal"></div>
+      <div><label for="eur">Euro ($)</label><input id="eur" inputmode="decimal"></div>
+    </div>
+    <button class="btn sec" id="actCotiz">Actualizar cotización</button>
+    <h2>Sincronización</h2>
+    <p class="muted">Pegá acá el enlace del Apps Script de la planilla “Familia Chávez”. Lo mismo en todos los teléfonos.</p>
+    <label for="urlScript">Enlace del servidor</label>
+    <input id="urlScript" placeholder="https://script.google.com/macros/s/…/exec">
+    <label for="clave">Clave de la familia</label>
+    <input id="clave" placeholder="La misma que pusieron en el Apps Script">
+    <button class="btn" id="guardarSync">Guardar y sincronizar</button>
+    <button class="btn peligro" id="borrarLocal">Borrar los datos de este teléfono</button>
+    <p class="muted" style="margin-top:16px">Para instalarla: en Safari tocá Compartir y después “Agregar a pantalla de inicio”.</p>
+  </section>
+</div>
+
+<nav class="tabs"><div class="in-nav">
+  <button data-v="balance" class="on"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 11 12 4l9 7v9a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1Z"/></svg>Balance</button>
+  <button data-v="movs"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 6h16M4 12h16M4 18h10"/></svg>Movimientos</button>
+  <button id="btnMas" aria-label="Cargar movimiento"><span class="mas">+</span></button>
+  <button data-v="venc"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M3 10h18M8 3v4M16 3v4"/></svg>Vencimientos</button>
+  <button data-v="familia"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="9" cy="8" r="3"/><circle cx="17" cy="9" r="2.5"/><path d="M3 20c0-3.3 2.7-6 6-6s6 2.7 6 6M15 20c0-2.5 1-4.5 3-4.5s3 1.5 3 4"/></svg>Familia</button>
+</div></nav>
+
+<!-- Hoja: cargar movimiento -->
+<div class="velo" id="hojaMov"><div class="hoja" role="dialog" aria-label="Cargar movimiento">
+  <h3 id="hojaMovTit">Nuevo movimiento</h3>
+  <div class="tipo"><button class="g on" data-t="gasto">Gasto</button><button class="i" data-t="ingreso">Ingreso</button></div>
+  <input class="monto-in" id="fMonto" inputmode="decimal" placeholder="$0">
+  <div class="fila2">
+    <div><label for="fMoneda">Moneda</label><select id="fMoneda"><option>ARS</option><option>USD</option><option>EUR</option></select></div>
+    <div><label for="fFecha">Fecha</label><input type="date" id="fFecha"></div>
+  </div>
+  <label for="fConcepto">Concepto</label><input id="fConcepto" placeholder="Ej: Luz Edenor, Supermercado, Sueldo">
+  <div class="fila2">
+    <div><label for="fCat">Categoría</label><select id="fCat"></select></div>
+    <div><label for="fPersona">Quién</label><select id="fPersona"></select></div>
+  </div>
+  <div class="subir" style="margin-top:14px">
+    <strong>¿Tenés la factura o el recibo en PDF?</strong>
+    <p class="muted" style="margin:4px 0 10px">La app lo lee y completa los datos. Revisalos antes de guardar.</p>
+    <input type="file" id="fPdf" accept="application/pdf">
+    <p class="muted" id="pdfEstado" style="margin:8px 0 0"></p>
+  </div>
+  <button class="btn" id="guardarMov">Guardar</button>
+  <button class="btn peligro" id="borrarMov" style="display:none">Borrar movimiento</button>
+  <button class="btn sec" data-cerrar>Cancelar</button>
+</div></div>
+
+<!-- Hoja: vencimiento -->
+<div class="velo" id="hojaVenc"><div class="hoja" role="dialog" aria-label="Vencimiento">
+  <h3 id="hojaVencTit">Nuevo vencimiento</h3>
+  <label for="vConcepto">Qué hay que pagar</label><input id="vConcepto" placeholder="Ej: Gas Metrogas">
+  <div class="fila2">
+    <div><label for="vMonto">Monto</label><input id="vMonto" inputmode="decimal"></div>
+    <div><label for="vMoneda">Moneda</label><select id="vMoneda"><option>ARS</option><option>USD</option><option>EUR</option></select></div>
+  </div>
+  <div class="fila2">
+    <div><label for="vFecha">Vence</label><input type="date" id="vFecha"></div>
+    <div><label for="vCat">Categoría</label><select id="vCat"></select></div>
+  </div>
+  <label class="check"><input type="checkbox" id="vMensual"> Se repite todos los meses</label>
+  <button class="btn" id="guardarVenc">Guardar</button>
+  <button class="btn sec" id="pagarVenc" style="display:none">Marcar como pagado</button>
+  <button class="btn peligro" id="borrarVenc" style="display:none">Borrar vencimiento</button>
+  <button class="btn sec" data-cerrar>Cancelar</button>
+</div></div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+/* ---------- Datos ---------- */
+const CATS = {
+  gasto:[["Super y comida","🛒"],["Servicios","💡"],["Alquiler y expensas","🏠"],["Transporte","🚗"],["Salud","🩺"],["Educación","📚"],["Ropa","👕"],["Salidas","🍕"],["Tarjeta","💳"],["Impuestos","🧾"],["Otros","📦"]],
+  ingreso:[["Sueldo","💼"],["Trabajo extra","🔧"],["Ventas","🏷️"],["Regalos","🎁"],["Otros ingresos","➕"]]
+};
+const ICO = Object.fromEntries([...CATS.gasto,...CATS.ingreso]);
+const LS = "familiaChavez.v1";
+let db = cargar();
+function cargar(){
+  try{ const d = JSON.parse(localStorage.getItem(LS)); if(d) return d; }catch(e){}
+  return {movs:[],vencs:[],miembros:["Felipe"],yo:"Felipe",usd:0,eur:0,cotizFecha:"",url:"",clave:""};
+}
+function guardar(){ try{ localStorage.setItem(LS, JSON.stringify(db)); }catch(e){} }
+const uid = () => Date.now().toString(36)+Math.random().toString(36).slice(2,7);
+const hoy = () => new Date().toISOString().slice(0,10);
+const $ = id => document.getElementById(id);
+const fmt = n => (n<0?"−":"")+"$"+Math.abs(Math.round(n)).toLocaleString("es-AR");
+const num = s => { s=String(s||"").replace(/[^\d,.-]/g,""); if(s.includes(",")) s=s.replace(/\./g,"").replace(",","."); return parseFloat(s)||0; };
+const enPesos = (m,mon) => mon==="USD"? m*(db.usd||0) : mon==="EUR"? m*(db.eur||0) : m;
+const esc = s => String(s??"").replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+function toast(t){ const el=$("toast"); el.textContent=t; el.classList.add("ver"); clearTimeout(toast.t); toast.t=setTimeout(()=>el.classList.remove("ver"),2200); }
+
+/* ---------- Navegación ---------- */
+let vista="balance";
+document.querySelectorAll("nav.tabs button[data-v]").forEach(b=>b.onclick=()=>{
+  vista=b.dataset.v; document.querySelectorAll("nav.tabs button").forEach(x=>x.classList.toggle("on",x===b));
+  document.querySelectorAll(".vista").forEach(v=>v.classList.toggle("on",v.id==="v-"+vista)); render(); scrollTo(0,0);
+});
+document.querySelectorAll("[data-cerrar]").forEach(b=>b.onclick=()=>b.closest(".velo").classList.remove("abierto"));
+document.querySelectorAll(".velo").forEach(v=>v.onclick=e=>{ if(e.target===v) v.classList.remove("abierto"); });
+
+/* ---------- Mes seleccionado ---------- */
+let mesSel = hoy().slice(0,7);
+function moverMes(d){ const [y,m]=mesSel.split("-").map(Number); const f=new Date(y,m-1+d,1); mesSel=f.getFullYear()+"-"+String(f.getMonth()+1).padStart(2,"0"); render(); }
+$("mesAnt").onclick=()=>moverMes(-1); $("mesSig").onclick=()=>moverMes(1);
+
+/* ---------- Render ---------- */
+function render(){
+  const [y,m]=mesSel.split("-").map(Number);
+  $("mesNombre").textContent=new Date(y,m-1,1).toLocaleDateString("es-AR",{month:"long",year:"numeric"});
+  const delMes = db.movs.filter(x=>!x.borrado && x.fecha.slice(0,7)===mesSel);
+  const tin = delMes.filter(x=>x.tipo==="ingreso").reduce((a,x)=>a+x.ars,0);
+  const tout = delMes.filter(x=>x.tipo==="gasto").reduce((a,x)=>a+x.ars,0);
+  const saldo=tin-tout;
+  $("totIn").textContent=fmt(tin); $("totOut").textContent=fmt(tout);
+  $("saldo").textContent=fmt(saldo); $("saldo").classList.toggle("neg",saldo<0);
+  const pct = tin>0? Math.max(0,Math.min(1,saldo/tin)) : 0;
+  $("saldoPct").textContent = tin>0 ? (saldo>=0? `Queda el ${Math.round(pct*100)}% de lo que entró` : "Se gastó más de lo que entró") : "Cargá un ingreso para empezar";
+  const h=72*pct; $("agua").setAttribute("y",84-h); $("agua").setAttribute("height",h);
+
+  // Por categoría
+  const cat={}; delMes.filter(x=>x.tipo==="gasto").forEach(x=>cat[x.cat]=(cat[x.cat]||0)+x.ars);
+  const cs=Object.entries(cat).sort((a,b)=>b[1]-a[1]);
+  $("porCategoria").innerHTML = cs.length? cs.map(([c,v])=>`<div class="fila"><div class="ico">${ICO[c]||"📦"}</div><div class="txt"><span>${esc(c)}</span><div class="barra"><i style="width:${tout?v/tout*100:0}%"></i></div></div><div class="monto out">${fmt(v)}</div></div>`).join("") : `<div class="vacio">Todavía no hay gastos este mes.</div>`;
+
+  // Por persona
+  const per={}; delMes.forEach(x=>{ per[x.persona]=per[x.persona]||{i:0,g:0}; per[x.persona][x.tipo==="ingreso"?"i":"g"]+=x.ars; });
+  $("porPersona").innerHTML = Object.keys(per).length? Object.entries(per).map(([p,v])=>`<div class="fila"><div class="ico">${esc(p[0]||"?")}</div><div class="txt"><span>${esc(p)}</span><small><span class="in">+${fmt(v.i)}</span> · <span class="out">−${fmt(v.g).replace("$","$")}</span></small></div></div>`).join("") : `<div class="vacio">Nadie cargó nada este mes.</div>`;
+
+  // Próximos vencimientos (14 días)
+  const lim=new Date(); lim.setDate(lim.getDate()+14); const limS=lim.toISOString().slice(0,10);
+  const prox=db.vencs.filter(v=>!v.borrado && !v.pagado && v.fecha<=limS).sort((a,b)=>a.fecha.localeCompare(b.fecha));
+  $("proxVenc").innerHTML = prox.length? prox.map(filaVenc).join("") : `<div class="vacio">Nada por pagar en los próximos 14 días.</div>`;
+
+  // Aumentos: mismo concepto, mes actual vs. el anterior
+  $("aumentos").innerHTML = detectarAumentos(mesSel).map(a=>`<div class="aumento"><strong>${esc(a.concepto)} aumentó ${a.pct}%</strong><div class="muted">Pasó de ${fmt(a.antes)} a ${fmt(a.ahora)} respecto del mes anterior.</div></div>`).join("");
+
+  // Movimientos
+  const filtros=[["todos","Todos"],["gasto","Gastos"],["ingreso","Ingresos"]];
+  $("filtros").innerHTML = filtros.map(([k,t])=>`<button class="chip ${filtroMov===k?"on":""}" data-f="${k}">${t}</button>`).join("");
+  $("filtros").querySelectorAll("button").forEach(b=>b.onclick=()=>{filtroMov=b.dataset.f;render();});
+  const lm=delMes.filter(x=>filtroMov==="todos"||x.tipo===filtroMov).sort((a,b)=>b.fecha.localeCompare(a.fecha)||b.creado-a.creado);
+  $("listaMovs").innerHTML = lm.length? lm.map(x=>`<button class="fila" data-id="${x.id}"><div class="ico">${ICO[x.cat]||"📦"}</div><div class="txt"><span>${esc(x.concepto||x.cat)}</span><small>${new Date(x.fecha+"T12:00").toLocaleDateString("es-AR",{day:"numeric",month:"short"})} · ${esc(x.persona)}${x.moneda!=="ARS"?` · ${x.moneda} ${x.monto.toLocaleString("es-AR")}`:""}</small></div><div class="monto ${x.tipo==="ingreso"?"in":"out"}">${x.tipo==="ingreso"?"+":"−"}${fmt(x.ars)}</div></button>`).join("") : `<div class="vacio">No hay movimientos en ${$("mesNombre").textContent}. Tocá + para cargar uno.</div>`;
+  $("listaMovs").querySelectorAll("[data-id]").forEach(b=>b.onclick=()=>abrirMov(b.dataset.id));
+
+  // Vencimientos
+  const lv=db.vencs.filter(v=>!v.borrado).sort((a,b)=>(a.pagado-b.pagado)||a.fecha.localeCompare(b.fecha));
+  $("listaVenc").innerHTML = lv.length? lv.map(filaVenc).join("") : `<div class="vacio">Sin vencimientos. Agregá la luz, el gas o el alquiler.</div>`;
+  document.querySelectorAll("[data-venc]").forEach(b=>b.onclick=()=>abrirVenc(b.dataset.venc));
+
+  // Familia
+  $("quienSoy").innerHTML=db.miembros.map(p=>`<button class="chip ${db.yo===p?"on":""}" data-p="${esc(p)}">${esc(p)}</button>`).join("");
+  $("quienSoy").querySelectorAll("button").forEach(b=>b.onclick=()=>{db.yo=b.dataset.p;guardar();render();});
+  $("listaMiembros").innerHTML=db.miembros.map(p=>`<div class="fila"><div class="ico">${esc(p[0])}</div><div class="txt"><span>${esc(p)}</span></div><button class="etq rojo" data-quitar="${esc(p)}">Quitar</button></div>`).join("");
+  $("listaMiembros").querySelectorAll("[data-quitar]").forEach(b=>b.onclick=()=>{ if(db.miembros.length<2) return toast("Tiene que quedar al menos una persona"); db.miembros=db.miembros.filter(x=>x!==b.dataset.quitar); if(db.yo===b.dataset.quitar) db.yo=db.miembros[0]; guardar(); enviar({tipo:"miembros",lista:db.miembros}); render(); });
+  $("usd").value=db.usd||""; $("eur").value=db.eur||"";
+  $("cotizInfo").textContent = db.cotizFecha? `Dólar oficial y euro (venta) al ${db.cotizFecha}. Se usan para pasar a pesos lo que está en otra moneda.` : "Todavía no se cargó la cotización.";
+  $("urlScript").value=db.url||""; $("clave").value=db.clave||"";
+}
+let filtroMov="todos";
+function filaVenc(v){
+  const d=Math.round((new Date(v.fecha+"T12:00")-new Date(hoy()+"T12:00"))/864e5);
+  const e = v.pagado? `<span class="etq">Pagado</span>` : d<0? `<span class="etq rojo">Venció</span>` : d<=3? `<span class="etq aviso">${d===0?"Hoy":d===1?"Mañana":"En "+d+" días"}</span>` : `<span class="etq">${new Date(v.fecha+"T12:00").toLocaleDateString("es-AR",{day:"numeric",month:"short"})}</span>`;
+  return `<button class="fila" data-venc="${v.id}"><div class="ico">${ICO[v.cat]||"🧾"}</div><div class="txt"><span>${esc(v.concepto)}</span><small>${v.mensual?"Todos los meses · ":""}${v.moneda} ${(+v.monto||0).toLocaleString("es-AR")}</small></div>${e}</button>`;
+}
+function claveConcepto(s){ return String(s||"").toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g,"").replace(/[^a-z ]/g,"").trim().split(/\s+/).slice(0,2).join(" "); }
+function detectarAumentos(mes){
+  const [y,m]=mes.split("-").map(Number); const p=new Date(y,m-2,1); const ant=p.getFullYear()+"-"+String(p.getMonth()+1).padStart(2,"0");
+  const sum=(mm)=>{const r={}; db.movs.filter(x=>!x.borrado&&x.tipo==="gasto"&&x.cat==="Servicios"&&x.fecha.slice(0,7)===mm).forEach(x=>{const k=claveConcepto(x.concepto); if(!k) return; r[k]=r[k]||{c:x.concepto,v:0}; r[k].v+=x.ars;}); return r;};
+  const a=sum(mes), b=sum(ant);
+  return Object.keys(a).filter(k=>b[k]&&a[k].v>b[k].v*1.05).map(k=>({concepto:a[k].c,antes:b[k].v,ahora:a[k].v,pct:Math.round((a[k].v/b[k].v-1)*100)}));
+}
+
+/* ---------- Hoja de movimiento ---------- */
+let tipoSel="gasto", editMov=null;
+function llenarCats(sel,tipo){ sel.innerHTML=CATS[tipo].map(([c,i])=>`<option value="${c}">${i} ${c}</option>`).join(""); }
+function setTipo(t){ tipoSel=t; document.querySelectorAll("#hojaMov .tipo button").forEach(b=>b.classList.toggle("on",b.dataset.t===t)); llenarCats($("fCat"),t); }
+document.querySelectorAll("#hojaMov .tipo button").forEach(b=>b.onclick=()=>setTipo(b.dataset.t));
+function abrirMov(id){
+  editMov = id? db.movs.find(x=>x.id===id) : null;
+  setTipo(editMov?editMov.tipo:"gasto");
+  $("fPersona").innerHTML=db.miembros.map(p=>`<option>${esc(p)}</option>`).join("");
+  $("fMonto").value=editMov? String(editMov.monto).replace(".",",") : "";
+  $("fMoneda").value=editMov?editMov.moneda:"ARS";
+  $("fFecha").value=editMov?editMov.fecha:hoy();
+  $("fConcepto").value=editMov?editMov.concepto:"";
+  if(editMov) $("fCat").value=editMov.cat;
+  $("fPersona").value=editMov?editMov.persona:db.yo;
+  $("fPdf").value=""; $("pdfEstado").textContent="";
+  $("hojaMovTit").textContent=editMov?"Editar movimiento":"Nuevo movimiento";
+  $("borrarMov").style.display=editMov?"block":"none";
+  $("hojaMov").classList.add("abierto");
+}
+$("btnMas").onclick=()=>abrirMov(null);
+$("guardarMov").onclick=()=>{
+  const monto=num($("fMonto").value); if(!monto) return toast("Poné un monto");
+  const moneda=$("fMoneda").value;
+  if(moneda!=="ARS" && !(moneda==="USD"?db.usd:db.eur)) return toast("Falta la cotización: andá a Familia");
+  const x = editMov || {id:uid(),creado:Date.now()};
+  Object.assign(x,{tipo:tipoSel,monto,moneda,ars:enPesos(monto,moneda),fecha:$("fFecha").value||hoy(),concepto:$("fConcepto").value.trim(),cat:$("fCat").value,persona:$("fPersona").value,editado:Date.now(),autor:db.yo});
+  if(!editMov) db.movs.push(x);
+  guardar(); enviar({tipo:"mov",dato:x}); $("hojaMov").classList.remove("abierto");
+  mesSel=x.fecha.slice(0,7); render(); toast(tipoSel==="ingreso"?"Ingreso guardado":"Gasto guardado");
+};
+$("borrarMov").onclick=()=>{ if(!editMov||!confirm("¿Borrar este movimiento para toda la familia?")) return; editMov.borrado=true; editMov.editado=Date.now(); guardar(); enviar({tipo:"mov",dato:editMov}); $("hojaMov").classList.remove("abierto"); render(); toast("Movimiento borrado"); };
+
+/* ---------- Lectura de PDF (factura o recibo) ---------- */
+const EMPRESAS=[["edenor","Luz Edenor"],["edesur","Luz Edesur"],["metrogas","Gas Metrogas"],["naturgy","Gas Naturgy"],["camuzzi","Gas Camuzzi"],["aysa","Agua AySA"],["telecentro","Internet Telecentro"],["personal","Personal"],["fibertel","Internet Fibertel"],["movistar","Movistar"],["claro","Claro"],["directv","DirecTV"],["flow","Flow"],["arba","ARBA"],["agip","ABL / AGIP"],["expensas","Expensas"],["osde","OSDE"],["swiss medical","Swiss Medical"],["galeno","Galeno"]];
+if(window.pdfjsLib) pdfjsLib.GlobalWorkerOptions.workerSrc="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js";
+$("fPdf").onchange=async e=>{
+  const f=e.target.files[0]; if(!f) return;
+  if(!window.pdfjsLib) return $("pdfEstado").textContent="No se pudo cargar el lector de PDF. Revisá la conexión.";
+  $("pdfEstado").textContent="Leyendo el PDF…";
+  try{
+    const buf=await f.arrayBuffer();
+    const tarea=pdfjsLib.getDocument({data:buf});
+    tarea.onPassword=(cb,razon)=>{ const p=prompt(razon===2?"Contraseña incorrecta. Probá de nuevo:":"El PDF tiene contraseña (suele ser el DNI):"); cb(p||""); };
+    const pdf=await tarea.promise; let txt="";
+    for(let i=1;i<=Math.min(pdf.numPages,4);i++){ const pg=await pdf.getPage(i); const c=await pg.getTextContent(); txt+=c.items.map(t=>t.str).join(" ")+"\n"; }
+    interpretar(txt);
+  }catch(err){ $("pdfEstado").textContent="No se pudo leer ese PDF. Cargá los datos a mano."; }
+};
+function montoTras(txt,claves){
+  for(const k of claves){ const r=new RegExp(k+"[^\\d$]{0,40}\\$?\\s*([\\d.]+,\\d{2}|\\d+[\\d.]*)","i"); const m=txt.match(r); if(m) return num(m[1]); }
+  return 0;
+}
+function fechaTras(txt,claves){
+  for(const k of claves){ const m=txt.match(new RegExp(k+"[^\\d]{0,30}(\\d{1,2})[\\/\\-.](\\d{1,2})[\\/\\-.](\\d{2,4})","i")); if(m){ let y=m[3].length===2?"20"+m[3]:m[3]; return `${y}-${m[2].padStart(2,"0")}-${m[1].padStart(2,"0")}`; } }
+  return "";
+}
+function interpretar(txt){
+  const bajo=txt.toLowerCase();
+  const esRecibo=/neto a cobrar|total neto|recibo de (haberes|sueldo)|haberes/.test(bajo);
+  if(esRecibo){
+    const neto=montoTras(txt,["neto a cobrar","total neto","neto a percibir","neto"]);
+    setTipo("ingreso"); $("fCat").value="Sueldo";
+    if(neto) $("fMonto").value=neto.toLocaleString("es-AR",{minimumFractionDigits:2});
+    const per=txt.match(/per[ií]odo[^\d]{0,15}(\d{1,2})[\/\-](\d{4})/i);
+    $("fConcepto").value="Sueldo"+(per?` ${per[1].padStart(2,"0")}/${per[2]}`:"");
+    $("pdfEstado").textContent= neto? `Recibo de sueldo: neto ${fmt(neto)}. Revisá y guardá.` : "Es un recibo, pero no encontré el neto. Completalo a mano.";
+    return;
+  }
+  const emp=EMPRESAS.find(([k])=>bajo.includes(k));
+  const total=montoTras(txt,["total a pagar","importe a pagar","total a abonar","importe total","total factura","saldo a pagar","total"]);
+  const venc=fechaTras(txt,["1(?:er|°)?\\s*vencimiento","vencimiento","vence","fecha de vto","vto"]);
+  setTipo("gasto"); $("fCat").value= emp&&/expensas/.test(emp[0])?"Alquiler y expensas": emp&&/arba|agip/.test(emp[0])?"Impuestos": emp&&/osde|swiss|galeno/.test(emp[0])?"Salud":"Servicios";
+  if(emp) $("fConcepto").value=emp[1];
+  if(total) $("fMonto").value=total.toLocaleString("es-AR",{minimumFractionDigits:2});
+  let msg = total? `Factura${emp?" de "+emp[1]:""}: ${fmt(total)}.` : "No encontré el total. Completalo a mano.";
+  if(venc && venc>=hoy()){
+    msg+=` Vence el ${new Date(venc+"T12:00").toLocaleDateString("es-AR")}.`;
+    if(total && confirm(`¿Agregar el vencimiento del ${new Date(venc+"T12:00").toLocaleDateString("es-AR")} en vez de cargarlo como gasto ya pagado?`)){
+      const v={id:uid(),concepto:$("fConcepto").value||"Factura",monto:total,moneda:"ARS",fecha:venc,cat:$("fCat").value,mensual:true,pagado:false,editado:Date.now(),autor:db.yo};
+      db.vencs.push(v); guardar(); enviar({tipo:"venc",dato:v}); $("hojaMov").classList.remove("abierto"); render(); toast("Vencimiento agregado"); return;
+    }
+  }
+  $("pdfEstado").textContent=msg+" Revisá y guardá.";
+}
+
+/* ---------- Vencimientos ---------- */
+let editVenc=null;
+function abrirVenc(id){
+  editVenc=id? db.vencs.find(v=>v.id===id):null;
+  llenarCats($("vCat"),"gasto");
+  $("vConcepto").value=editVenc?editVenc.concepto:""; $("vMonto").value=editVenc?String(editVenc.monto).replace(".",","):"";
+  $("vMoneda").value=editVenc?editVenc.moneda:"ARS"; $("vFecha").value=editVenc?editVenc.fecha:hoy();
+  $("vCat").value=editVenc?editVenc.cat:"Servicios"; $("vMensual").checked=editVenc?!!editVenc.mensual:true;
+  $("hojaVencTit").textContent=editVenc?"Vencimiento":"Nuevo vencimiento";
+  $("pagarVenc").style.display=editVenc&&!editVenc.pagado?"block":"none";
+  $("borrarVenc").style.display=editVenc?"block":"none";
+  $("hojaVenc").classList.add("abierto");
+}
+$("nuevoVenc").onclick=()=>abrirVenc(null);
+$("guardarVenc").onclick=()=>{
+  if(!$("vConcepto").value.trim()) return toast("Poné qué hay que pagar");
+  const v=editVenc||{id:uid(),pagado:false};
+  Object.assign(v,{concepto:$("vConcepto").value.trim(),monto:num($("vMonto").value),moneda:$("vMoneda").value,fecha:$("vFecha").value||hoy(),cat:$("vCat").value,mensual:$("vMensual").checked,editado:Date.now(),autor:db.yo});
+  if(!editVenc) db.vencs.push(v);
+  guardar(); enviar({tipo:"venc",dato:v}); $("hojaVenc").classList.remove("abierto"); render(); toast("Vencimiento guardado");
+};
+$("pagarVenc").onclick=()=>{
+  const v=editVenc; const ars=enPesos(v.monto,v.moneda);
+  const mov={id:uid(),creado:Date.now(),tipo:"gasto",monto:v.monto,moneda:v.moneda,ars,fecha:hoy(),concepto:v.concepto,cat:v.cat,persona:db.yo,editado:Date.now(),autor:db.yo};
+  db.movs.push(mov); enviar({tipo:"mov",dato:mov});
+  v.pagado=true; v.editado=Date.now(); enviar({tipo:"venc",dato:v});
+  if(v.mensual){ const f=new Date(v.fecha+"T12:00"); f.setMonth(f.getMonth()+1);
+    const n={...v,id:uid(),fecha:f.toISOString().slice(0,10),pagado:false,editado:Date.now()}; db.vencs.push(n); enviar({tipo:"venc",dato:n}); }
+  guardar(); $("hojaVenc").classList.remove("abierto"); render(); toast("Pagado y cargado como gasto");
+};
+$("borrarVenc").onclick=()=>{ if(!confirm("¿Borrar este vencimiento?")) return; editVenc.borrado=true; editVenc.editado=Date.now(); guardar(); enviar({tipo:"venc",dato:editVenc}); $("hojaVenc").classList.remove("abierto"); render(); };
+
+/* ---------- Familia y cotización ---------- */
+$("agregarMiembro").onclick=()=>{ const n=$("nuevoMiembro").value.trim(); if(!n||db.miembros.includes(n)) return; db.miembros.push(n); $("nuevoMiembro").value=""; guardar(); enviar({tipo:"miembros",lista:db.miembros}); render(); };
+$("usd").onchange=()=>{db.usd=num($("usd").value);guardar();};
+$("eur").onchange=()=>{db.eur=num($("eur").value);guardar();};
+async function actualizarCotiz(avisar){
+  try{
+    const [u,e]=await Promise.all([fetch("https://dolarapi.com/v1/dolares/oficial").then(r=>r.json()),fetch("https://dolarapi.com/v1/cotizaciones/eur").then(r=>r.json())]);
+    if(u.venta) db.usd=u.venta; if(e.venta) db.eur=e.venta;
+    db.cotizFecha=new Date().toLocaleDateString("es-AR"); guardar(); render(); if(avisar) toast("Cotización actualizada");
+  }catch(err){ if(avisar) toast("No se pudo traer la cotización. Cargala a mano."); }
+}
+$("actCotiz").onclick=()=>actualizarCotiz(true);
+$("borrarLocal").onclick=()=>{ if(confirm("Esto borra los datos guardados en este teléfono. Lo que está en la planilla queda a salvo. ¿Seguir?")){ localStorage.removeItem(LS); location.reload(); } };
+
+/* ---------- Sincronización con la planilla (Apps Script) ---------- */
+let pendientes=[];
+try{ pendientes=JSON.parse(localStorage.getItem(LS+".pend"))||[]; }catch(e){}
+function estado(ok,t){ $("sync").innerHTML=`<span class="punto ${ok===true?"ok":ok===false?"err":""}"></span><span>${t}</span>`; }
+function enviar(cambio){ pendientes.push(cambio); try{localStorage.setItem(LS+".pend",JSON.stringify(pendientes));}catch(e){} subir(); }
+async function subir(){
+  if(!db.url||!pendientes.length) return;
+  const lote=pendientes.slice();
+  try{
+    const r=await fetch(db.url,{method:"POST",headers:{"Content-Type":"text/plain;charset=utf-8"},body:JSON.stringify({clave:db.clave,cambios:lote})});
+    const j=await r.json(); if(!j.ok) throw new Error(j.error||"error");
+    pendientes=pendientes.slice(lote.length); localStorage.setItem(LS+".pend",JSON.stringify(pendientes));
+    estado(true,"Sincronizado");
+  }catch(e){ estado(false,"Sin sincronizar"); }
+}
+function mezclar(lista,nuevos){
+  const mapa=new Map(lista.map(x=>[x.id,x]));
+  nuevos.forEach(n=>{ const v=mapa.get(n.id); if(!v||(n.editado||0)>=(v.editado||0)) mapa.set(n.id,n); });
+  return [...mapa.values()];
+}
+async function bajar(){
+  if(!db.url){ estado(null,"Solo en este teléfono"); return; }
+  try{
+    await subir();
+    const r=await fetch(db.url+"?clave="+encodeURIComponent(db.clave)); const j=await r.json();
+    if(!j.ok) throw new Error(j.error);
+    db.movs=mezclar(db.movs,j.movs||[]); db.vencs=mezclar(db.vencs,j.vencs||[]);
+    if(j.miembros&&j.miembros.length) db.miembros=j.miembros;
+    if(!db.miembros.includes(db.yo)) db.yo=db.miembros[0];
+    guardar(); estado(true,"Sincronizado"); render();
+  }catch(e){ estado(false,"Sin conexión con la planilla"); }
+}
+$("guardarSync").onclick=()=>{ db.url=$("urlScript").value.trim(); db.clave=$("clave").value.trim(); guardar(); bajar().then(()=>toast("Listo")); };
+
+/* ---------- Arranque ---------- */
+render(); bajar();
+const hace = db.cotizFecha? 0 : 1; if(hace || db.cotizFecha!==new Date().toLocaleDateString("es-AR")) actualizarCotiz(false);
+setInterval(bajar,20000);
+document.addEventListener("visibilitychange",()=>{ if(!document.hidden) bajar(); });
+if("serviceWorker" in navigator) navigator.serviceWorker.register("sw.js").catch(()=>{});
+</script>
+</body>
+</html>
